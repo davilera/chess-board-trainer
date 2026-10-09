@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chess Square Trainer</title>
+  <style>
+    :root {
+      --bg: #111318;
+      --panel: #1a1f27;
+      --panel-2: #222833;
+      --text: #f5f7fb;
+      --muted: #9aa5b5;
+      --accent: #70a5ff;
+      --good: #5ccf8a;
+      --bad: #ff6b6b;
+      --light: #e6d5b8;
+      --dark: #7b5b3e;
+      --border: #313846;
+      --shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(112,165,255,.10), transparent 35%),
+        var(--bg);
+    }
+
+    button, select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1120px, calc(100% - 28px));
+      margin: 28px auto;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.6rem, 3vw, 2.25rem);
+      letter-spacing: -.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .setup {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+      gap: 12px;
+      padding: 16px;
+      margin-bottom: 18px;
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: .84rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    select {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 12px;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      outline: none;
+    }
+
+    select:focus, button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .primary, .secondary, .danger {
+      min-height: 44px;
+      border: 0;
+      border-radius: 11px;
+      padding: 0 17px;
+      font-weight: 800;
+      transition: transform .12s ease, filter .12s ease;
+    }
+
+    .primary:hover, .secondary:hover, .danger:hover,
+    .color-btn:hover {
+      filter: brightness(1.07);
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #08101d;
+    }
+
+    .secondary {
+      background: #2b3340;
+      color: var(--text);
+      border: 1px solid #3b4556;
+    }
+
+    .danger {
+      background: #3a2328;
+      color: #ffb6b6;
+      border: 1px solid #643038;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 18px;
+    }
+
+    .game-card {
+      padding: 18px;
+    }
+
+    .prompt-row {
+      min-height: 90px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .prompt-label {
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .prompt {
+      margin-top: 5px;
+      font-size: clamp(2.4rem, 7vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -.04em;
+      line-height: 1;
+      min-width: 4ch;
+    }
+
+    .timer {
+      text-align: right;
+    }
+
+    .timer-value {
+      font-size: 1.9rem;
+      font-weight: 900;
+    }
+
+    .timer-label {
+      color: var(--muted);
+      font-size: .8rem;
+    }
+
+    .board-wrap {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) 28px;
+      max-width: 720px;
+      margin: 0 auto;
+      aspect-ratio: 1 / 1;
+    }
+
+    .board {
+      grid-column: 2;
+      grid-row: 1;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #0a0c10;
+      box-shadow: 0 14px 40px rgba(0,0,0,.28);
+      user-select: none;
+    }
+
+    .square {
+      border: 0;
+      padding: 0;
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      min-height: 0;
+      color: rgba(0,0,0,.28);
+      font-weight: 900;
+      font-size: clamp(.65rem, 1.6vw, 1rem);
+    }
+
+    .square.light { background: var(--light); }
+    .square.dark { background: var(--dark); }
+
+    .square:hover::after {
+      content: "";
+      position: absolute;
+      inset: 7%;
+      border-radius: 9px;
+      background: rgba(255,255,255,.18);
+    }
+
+    /* In file/rank practice, hovering any square highlights the full
+       clickable file or rank instead of only the individual square. */
+    .board.group-hover .square:hover::after {
+      display: none;
+    }
+
+    /* For file/rank modes, tint the actual square backgrounds.
+       This avoids pseudo-element hover conflicts and makes every
+       square in the hovered group visually identical. */
+    .square.light.group-highlight {
+      background: #d98f8f;
+    }
+
+    .square.dark.group-highlight {
+      background: #a85757;
+    }
+
+    .board.cell-hover .square.light:hover {
+      background: #d98f8f;
+    }
+
+    .board.cell-hover .square.dark:hover {
+      background: #a85757;
+    }
+
+    .board.cell-hover .square:hover::after {
+      display: none;
+    }
+
+
+    .square.correct {
+      animation: successFlash .22s ease;
+      z-index: 2;
+    }
+
+    .square.wrong {
+      animation: failFlash .22s ease;
+      z-index: 2;
+    }
+
+    @keyframes successFlash {
+      0%,100% { box-shadow: none; }
+      50% { box-shadow: inset 0 0 0 999px rgba(92,207,138,.7); }
+    }
+
+    @keyframes failFlash {
+      0%,100% { box-shadow: none; }
+      50% { box-shadow: inset 0 0 0 999px rgba(255,107,107,.72); }
+    }
+
+    .ranks, .files {
+      color: var(--muted);
+      font-size: .75rem;
+      font-weight: 800;
+    }
+
+    .ranks {
+      grid-column: 1;
+      grid-row: 1;
+      display: grid;
+      grid-template-rows: repeat(8, 1fr);
+      align-items: center;
+      justify-items: center;
+    }
+
+    .files {
+      grid-column: 2;
+      grid-row: 2;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      align-items: center;
+      justify-items: center;
+    }
+
+    .file-target,
+    .rank-target {
+      cursor: pointer;
+    }
+
+    .file-target:hover,
+    .rank-target:hover {
+      background: rgba(112,165,255,.10);
+      color: var(--text);
+      border-radius: 6px;
+    }
+
+    .color-controls {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 720px;
+      margin: 16px auto 0;
+    }
+
+    .color-controls.visible { display: grid; }
+
+    .color-btn {
+      min-height: 72px;
+      border-radius: 14px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      border: 2px solid transparent;
+      transition: transform .12s ease, filter .12s ease;
+    }
+
+    .color-btn.white {
+      background: #eee6d8;
+      color: #222;
+      border-color: #fff;
+    }
+
+    .color-btn.black {
+      background: #171717;
+      color: #fff;
+      border-color: #3b3b3b;
+    }
+
+    .status {
+      min-height: 27px;
+      text-align: center;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status.good { color: var(--good); }
+    .status.bad { color: var(--bad); }
+
+    .side {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .stats {
+      padding: 17px;
+    }
+
+    .stats h2, .help h2 {
+      margin: 0 0 14px;
+      font-size: 1rem;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      padding: 13px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .stat .k {
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .stat .v {
+      font-size: 1.5rem;
+      font-weight: 900;
+    }
+
+    .best-line {
+      margin-top: 12px;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .best-line strong {
+      color: var(--text);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .help {
+      padding: 17px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: .9rem;
+    }
+
+    .help p {
+      margin: 0 0 9px;
+    }
+
+    .help p:last-child {
+      margin-bottom: 0;
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 5px;
+      border: 1px solid #4a5363;
+      background: #2b3240;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .82em;
+    }
+
+    .disabled-board .square,
+    .disabled-board .file-target,
+    .disabled-board .rank-target {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    @media (max-width: 850px) {
+      .setup {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .setup .primary {
+        grid-column: 1 / -1;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        width: min(100% - 16px, 1120px);
+        margin: 10px auto 20px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .setup {
+        grid-template-columns: 1fr;
+      }
+
+      .setup .primary {
+        grid-column: auto;
+      }
+
+      .game-card {
+        padding: 12px;
+      }
+
+      .side {
+        grid-template-columns: 1fr;
+      }
+
+      .prompt-row {
+        min-height: 78px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <h1>Chess Square Trainer</h1>
+        <p class="subtitle">Build instant board-coordinate recognition from either side.</p>
+      </div>
+    </header>
+
+    <section class="setup card">
+      <label>
+        Mode
+        <select id="modeSelect">
+          <option value="file">Files (a–h)</option>
+          <option value="rank">Ranks (1–8)</option>
+          <option value="cell" selected>Squares (a1–h8)</option>
+          <option value="color">Square colors</option>
+        </select>
+      </label>
+
+      <label>
+        Perspective
+        <select id="perspectiveSelect">
+          <option value="white" selected>White</option>
+          <option value="black">Black</option>
+        </select>
+      </label>
+
+      <label>
+        Round length
+        <select id="durationSelect">
+          <option value="30">30 seconds</option>
+          <option value="60" selected>60 seconds</option>
+          <option value="120">120 seconds</option>
+          <option value="manual">Until I end it</option>
+        </select>
+      </label>
+
+      <label>
+        Show square labels
+        <select id="labelsSelect">
+          <option value="off" selected>Off</option>
+          <option value="on">On</option>
+        </select>
+      </label>
+
+      <button id="startBtn" class="primary">Start round</button>
+    </section>
+
+    <div class="main">
+      <section class="game-card card">
+        <div class="prompt-row">
+          <div>
+            <div class="prompt-label" id="promptLabel">Target square</div>
+            <div class="prompt" id="prompt">—</div>
+          </div>
+          <div class="timer">
+            <div class="timer-value" id="timerValue">60</div>
+            <div class="timer-label">seconds left</div>
+          </div>
+        </div>
+
+        <div class="board-wrap" id="boardWrap">
+          <div class="ranks" id="rankLabels"></div>
+          <div class="board disabled-board" id="board"></div>
+          <div class="files" id="fileLabels"></div>
+        </div>
+
+        <div class="color-controls" id="colorControls">
+          <button class="color-btn white" data-color-answer="white">White · W</button>
+          <button class="color-btn black" data-color-answer="black">Black · B</button>
+        </div>
+
+        <p class="status" id="status">Choose a mode and start a round.</p>
+      </section>
+
+      <aside class="side">
+        <section class="stats card">
+          <h2>Current round</h2>
+          <div class="stat-grid">
+            <div class="stat">
+              <div class="k">Correct</div>
+              <div class="v" id="correctCount">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">Wrong</div>
+              <div class="v" id="wrongCount">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">Attempts</div>
+              <div class="v" id="attemptCount">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">Accuracy</div>
+              <div class="v" id="accuracy">—</div>
+            </div>
+          </div>
+
+          <div class="best-line" id="bestLine">
+            Best for this setup: <strong>none yet</strong>
+          </div>
+
+          <div class="actions">
+            <button id="resetBestBtn" class="secondary">Reset best for this setup</button>
+          </div>
+        </section>
+
+        <section class="help card">
+          <h2>How it works</h2>
+          <p><strong>Files:</strong> click any square in the requested file, or click its file label.</p>
+          <p><strong>Ranks:</strong> click any square in the requested rank, or click its rank label.</p>
+          <p><strong>Squares:</strong> click the exact requested square.</p>
+          <p><strong>Colors:</strong> use the buttons or press <span class="kbd">W</span> / <span class="kbd">B</span>.</p>
+          <p>Best scores are stored in your browser with <code>localStorage</code>.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const FILES = ["a","b","c","d","e","f","g","h"];
+      const RANKS = [1,2,3,4,5,6,7,8];
+
+      const els = {
+        mode: document.getElementById("modeSelect"),
+        perspective: document.getElementById("perspectiveSelect"),
+        duration: document.getElementById("durationSelect"),
+        labels: document.getElementById("labelsSelect"),
+        start: document.getElementById("startBtn"),
+        resetBest: document.getElementById("resetBestBtn"),
+        board: document.getElementById("board"),
+        boardWrap: document.getElementById("boardWrap"),
+        rankLabels: document.getElementById("rankLabels"),
+        fileLabels: document.getElementById("fileLabels"),
+        prompt: document.getElementById("prompt"),
+        promptLabel: document.getElementById("promptLabel"),
+        timer: document.getElementById("timerValue"),
+        status: document.getElementById("status"),
+        colorControls: document.getElementById("colorControls"),
+        correct: document.getElementById("correctCount"),
+        wrong: document.getElementById("wrongCount"),
+        attempts: document.getElementById("attemptCount"),
+        accuracy: document.getElementById("accuracy"),
+        bestLine: document.getElementById("bestLine"),
+      };
+
+      let state = {
+        running: false,
+        target: null,
+        correct: 0,
+        wrong: 0,
+        remaining: 60,
+        timerId: null,
+        startedAt: null,
+      };
+
+      function currentConfig() {
+        return {
+          mode: els.mode.value,
+          perspective: els.perspective.value,
+          duration: els.duration.value,
+        };
+      }
+
+      function configKey() {
+        const c = currentConfig();
+        return `chess-square-trainer:v1:${c.mode}:${c.perspective}:${c.duration}`;
+      }
+
+      function allBestKeyPrefix() {
+        return "chess-square-trainer:v1:";
+      }
+
+      function getBest() {
+        try {
+          return JSON.parse(localStorage.getItem(configKey())) || null;
+        } catch {
+          return null;
+        }
+      }
+
+      function setBest(best) {
+        localStorage.setItem(configKey(), JSON.stringify(best));
+      }
+
+      function formatBest(best) {
+        if (!best) return "Best for this setup: <strong>none yet</strong>";
+        const total = best.correct + best.wrong;
+        const acc = total ? Math.round((best.correct / total) * 100) : 0;
+        return `Best for this setup: <strong>${best.correct} correct</strong>, ${best.wrong} wrong · ${acc}% accuracy`;
+      }
+
+      function updateBestDisplay() {
+        els.bestLine.innerHTML = formatBest(getBest());
+      }
+
+      function boardOrder() {
+        const white = els.perspective.value === "white";
+        return {
+          files: white ? [...FILES] : [...FILES].reverse(),
+          ranks: white ? [...RANKS].reverse() : [...RANKS],
+        };
+      }
+
+      function squareColor(file, rank) {
+        const fileIndex = FILES.indexOf(file) + 1;
+        return ((fileIndex + rank) % 2 === 0) ? "dark" : "light";
+      }
+
+      function renderBoard() {
+        const { files, ranks } = boardOrder();
+        els.board.innerHTML = "";
+        els.board.classList.toggle("group-hover", ["file", "rank"].includes(els.mode.value));
+        els.board.classList.toggle("cell-hover", els.mode.value === "cell");
+        els.rankLabels.innerHTML = "";
+        els.fileLabels.innerHTML = "";
+
+        for (const rank of ranks) {
+          const label = document.createElement("div");
+          label.textContent = rank;
+          label.className = "rank-target";
+          label.dataset.rank = rank;
+          els.rankLabels.appendChild(label);
+        }
+
+        for (const file of files) {
+          const label = document.createElement("div");
+          label.textContent = file;
+          label.className = "file-target";
+          label.dataset.file = file;
+          els.fileLabels.appendChild(label);
+        }
+
+        for (const rank of ranks) {
+          for (const file of files) {
+            const square = document.createElement("button");
+            square.className = `square ${squareColor(file, rank)}`;
+            square.dataset.file = file;
+            square.dataset.rank = rank;
+            square.dataset.square = `${file}${rank}`;
+            square.setAttribute("aria-label", `${file}${rank}`);
+            if (els.labels.value === "on") {
+              square.textContent = `${file}${rank}`;
+            }
+            els.board.appendChild(square);
+          }
+        }
+      }
+
+      function randomItem(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function makeTarget() {
+        const mode = els.mode.value;
+        if (mode === "file") return randomItem(FILES);
+        if (mode === "rank") return String(randomItem(RANKS));
+        const file = randomItem(FILES);
+        const rank = randomItem(RANKS);
+        return `${file}${rank}`;
+      }
+
+      function promptTitle() {
+        const mode = els.mode.value;
+        return {
+          file: "Target file",
+          rank: "Target rank",
+          cell: "Target square",
+          color: "What color is this square?"
+        }[mode];
+      }
+
+      function nextTarget() {
+        let next;
+        do {
+          next = makeTarget();
+        } while (next === state.target && (els.mode.value === "file" || els.mode.value === "rank"));
+        state.target = next;
+        els.prompt.textContent = next;
+        els.promptLabel.textContent = promptTitle();
+      }
+
+      function updateStats() {
+        const total = state.correct + state.wrong;
+        els.correct.textContent = state.correct;
+        els.wrong.textContent = state.wrong;
+        els.attempts.textContent = total;
+        els.accuracy.textContent = total ? `${Math.round((state.correct / total) * 100)}%` : "—";
+      }
+
+      function setStatus(message, type = "") {
+        els.status.textContent = message;
+        els.status.className = `status ${type}`.trim();
+      }
+
+      function markSquare(squareName, correct) {
+        const node = [...els.board.children].find(el => el.dataset.square === squareName);
+        if (!node) return;
+        node.classList.remove("correct", "wrong");
+        void node.offsetWidth;
+        node.classList.add(correct ? "correct" : "wrong");
+        setTimeout(() => node.classList.remove("correct", "wrong"), 240);
+      }
+
+      function answerBoardClick(file, rank) {
+        if (!state.running) return;
+
+        const mode = els.mode.value;
+        if (mode === "color") return;
+
+        let correct = false;
+        if (mode === "file") correct = file === state.target;
+        else if (mode === "rank") correct = String(rank) === state.target;
+        else if (mode === "cell") correct = `${file}${rank}` === state.target;
+
+        registerAnswer(correct, `${file}${rank}`);
+      }
+
+      function answerColor(answer) {
+        if (!state.running || els.mode.value !== "color") return;
+        const file = state.target[0];
+        const rank = Number(state.target[1]);
+        const actual = squareColor(file, rank) === "light" ? "white" : "black";
+        registerAnswer(answer === actual, state.target);
+      }
+
+      function registerAnswer(correct, clickedSquare) {
+        if (correct) {
+          state.correct++;
+          setStatus("Correct", "good");
+          if (clickedSquare) markSquare(clickedSquare, true);
+          nextTarget();
+        } else {
+          state.wrong++;
+          setStatus("Not quite", "bad");
+          if (clickedSquare) markSquare(clickedSquare, false);
+        }
+        updateStats();
+      }
+
+      function startRound() {
+        clearInterval(state.timerId);
+
+        state.running = true;
+        state.correct = 0;
+        state.wrong = 0;
+        state.startedAt = Date.now();
+
+        const duration = els.duration.value;
+        state.remaining = duration === "manual" ? null : Number(duration);
+
+        els.board.classList.remove("disabled-board");
+        els.start.textContent = "End round";
+        els.start.classList.remove("primary");
+        els.start.classList.add("danger");
+
+        els.mode.disabled = true;
+        els.perspective.disabled = true;
+        els.duration.disabled = true;
+
+        els.colorControls.classList.toggle("visible", els.mode.value === "color");
+
+        updateStats();
+        nextTarget();
+        setStatus("Go!");
+
+        if (state.remaining === null) {
+          els.timer.textContent = "∞";
+          document.querySelector(".timer-label").textContent = "manual round";
+        } else {
+          els.timer.textContent = state.remaining;
+          document.querySelector(".timer-label").textContent = "seconds left";
+
+          state.timerId = setInterval(() => {
+            state.remaining--;
+            els.timer.textContent = state.remaining;
+            if (state.remaining <= 0) {
+              endRound(true);
+            }
+          }, 1000);
+        }
+      }
+
+      function scoreIsBetter(current, best) {
+        if (!best) return true;
+        if (current.correct !== best.correct) return current.correct > best.correct;
+        if (current.wrong !== best.wrong) return current.wrong < best.wrong;
+        return false;
+      }
+
+      function endRound(auto = false) {
+        if (!state.running) return;
+
+        clearInterval(state.timerId);
+        state.running = false;
+        els.board.classList.add("disabled-board");
+        els.start.textContent = "Start round";
+        els.start.classList.remove("danger");
+        els.start.classList.add("primary");
+        els.mode.disabled = false;
+        els.perspective.disabled = false;
+        els.duration.disabled = false;
+
+        const current = {
+          correct: state.correct,
+          wrong: state.wrong,
+          finishedAt: new Date().toISOString()
+        };
+
+        const best = getBest();
+        const isBest = scoreIsBetter(current, best);
+
+        if (isBest) setBest(current);
+        updateBestDisplay();
+
+        const total = state.correct + state.wrong;
+        const acc = total ? Math.round((state.correct / total) * 100) : 0;
+
+        setStatus(
+          `${auto ? "Time!" : "Round ended."} ${state.correct} correct, ${state.wrong} wrong (${acc}%).${isBest ? " New best!" : ""}`,
+          isBest ? "good" : ""
+        );
+
+        els.prompt.textContent = "—";
+        els.colorControls.classList.remove("visible");
+      }
+
+      function clearGroupHighlight() {
+        els.board.querySelectorAll(".group-highlight").forEach(square => {
+          square.classList.remove("group-highlight");
+        });
+      }
+
+      function highlightHoveredGroup(square) {
+        clearGroupHighlight();
+        const mode = els.mode.value;
+        if (mode !== "file" && mode !== "rank") return;
+
+        const attribute = mode === "file" ? "file" : "rank";
+        const value = square.dataset[attribute];
+
+        els.board.querySelectorAll(`.square[data-${attribute}="${value}"]`).forEach(item => {
+          item.classList.add("group-highlight");
+        });
+      }
+
+      els.board.addEventListener("mouseover", (e) => {
+        const square = e.target.closest(".square");
+        if (square) highlightHoveredGroup(square);
+      });
+
+      els.board.addEventListener("mouseleave", clearGroupHighlight);
+
+      els.board.addEventListener("click", (e) => {
+        const square = e.target.closest(".square");
+        if (!square) return;
+        answerBoardClick(square.dataset.file, Number(square.dataset.rank));
+      });
+
+      els.rankLabels.addEventListener("click", (e) => {
+        if (!state.running || els.mode.value !== "rank") return;
+        const label = e.target.closest("[data-rank]");
+        if (!label) return;
+
+        const rank = label.dataset.rank;
+        const file = boardOrder().files[0];
+        answerBoardClick(file, Number(rank));
+      });
+
+      els.fileLabels.addEventListener("click", (e) => {
+        if (!state.running || els.mode.value !== "file") return;
+        const label = e.target.closest("[data-file]");
+        if (!label) return;
+
+        const file = label.dataset.file;
+        const rank = boardOrder().ranks[0];
+        answerBoardClick(file, Number(rank));
+      });
+
+      els.colorControls.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-color-answer]");
+        if (btn) answerColor(btn.dataset.colorAnswer);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (!state.running || els.mode.value !== "color") return;
+        const key = e.key.toLowerCase();
+        if (key === "w") answerColor("white");
+        if (key === "b") answerColor("black");
+      });
+
+      els.start.addEventListener("click", () => {
+        if (state.running) {
+          endRound(false);
+        } else {
+          startRound();
+        }
+      });
+
+      els.resetBest.addEventListener("click", () => {
+        localStorage.removeItem(configKey());
+        updateBestDisplay();
+        setStatus("Best score for this setup was reset.");
+      });
+
+      els.perspective.addEventListener("change", () => {
+        renderBoard();
+        updateBestDisplay();
+      });
+
+      els.mode.addEventListener("change", () => {
+        clearGroupHighlight();
+        els.board.classList.toggle("group-hover", ["file", "rank"].includes(els.mode.value));
+        els.board.classList.toggle("cell-hover", els.mode.value === "cell");
+        els.colorControls.classList.toggle("visible", false);
+        els.promptLabel.textContent = promptTitle();
+        els.prompt.textContent = "—";
+        updateBestDisplay();
+      });
+
+      els.duration.addEventListener("change", () => {
+        els.timer.textContent = els.duration.value === "manual" ? "∞" : els.duration.value;
+        document.querySelector(".timer-label").textContent =
+          els.duration.value === "manual" ? "manual round" : "seconds left";
+        updateBestDisplay();
+      });
+
+      els.labels.addEventListener("change", renderBoard);
+
+      renderBoard();
+      updateBestDisplay();
+    })();
+  </script>
+</body>
+</html>
